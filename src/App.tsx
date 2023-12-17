@@ -1,23 +1,29 @@
 import { useState, useEffect, useRef } from 'react';
 import moment from 'moment';
 
-const ChimeApp = () => {
+const App = () => {
   
   const [startTime, setStartTime] = useState<string>();
   const [endTime, setEndTime] = useState<string>();
-  const [interval, setIntervalValue] = useState<string>('0'); // in seconds
+  const [interval, setIntervalValue] = useState<string>('1'); // in seconds
   const [nextChimeTime, setNextChimeTime] = useState<moment.Moment | null>();
   
   
   const nextChimeTimeRef = useRef(nextChimeTime);
-
+  
   useEffect(() => {
+    const audio = new Audio('../public/chime.mp3')
+    const playChime = () => {
+      audio.play()
+      console.log('Chime!');
+      
+    };
     const calculateNextChimeTime = () => {
       const now = moment();
       const start = moment(startTime, 'HH:mm');
       const end = moment(endTime, 'HH:mm');
       if (!now.isBetween(start, end)) {
-        return null;
+        return start.clone().startOf('minute');
       }
       const minutesSinceStart = now.diff(start, 'minutes');
       const minutesToNextChime = +interval - (minutesSinceStart % +interval);
@@ -28,15 +34,17 @@ const ChimeApp = () => {
     nextChimeTimeRef.current = calculateNextChimeTime();
     setNextChimeTime(nextChimeTimeRef.current);
     
+    
     const chimeInterval = setInterval(() => {
       const now = moment();
       if (nextChimeTimeRef.current && now.isSameOrAfter(nextChimeTimeRef.current)) {
-        console.log('chime');
+        playChime()
         nextChimeTimeRef.current = calculateNextChimeTime();
         setNextChimeTime(nextChimeTimeRef.current);
       }
-    }, 1000); // Check every second
-
+      
+    }, 60 * 1000); // Check every minute
+    
     return () => clearInterval(chimeInterval);
   }, [endTime, interval, startTime]);
   
@@ -60,16 +68,16 @@ const ChimeApp = () => {
         />
       </div>
       <div>
-        <label>Interval (minutes): </label>
+        <label>Interval (minutes2): </label>
         <input
           type="number"
           value={interval}
           onChange={(e) => setIntervalValue(e.target.value)}
         />
       </div>
-      <div>Next chime at: {nextChimeTime ? nextChimeTime.format('HH:mm') : 'Outside of chime range'}</div>
+      <div>Next chime at: {nextChimeTime ? nextChimeTime.format('HH:mm:ss') : 'Outside of chime range'}</div>
     </div>
   );
 };
 
-export default ChimeApp;
+export default App;
